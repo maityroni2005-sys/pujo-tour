@@ -214,8 +214,227 @@ CREATE POLICY "Admins can manage curated routes"
     ON public.curated_routes FOR ALL USING (public.is_admin());
 
 -- =====================================================================
--- REAL-TIME ENABLEMENT
+-- REAL-TIME ENABLEMENT (Idempotent)
 -- Allows instant live crowd and status updates across client devices
 -- =====================================================================
-ALTER PUBLICATION supabase_realtime ADD TABLE public.pandals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.reviews;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'pandals'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.pandals;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'reviews'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.reviews;
+    END IF;
+END $$;
+
+-- =====================================================================
+-- PRE-POPULATED SEED DATA FOR WEST BENGAL PANDALS
+-- =====================================================================
+INSERT INTO public.pandals (id, name, bengali_name, zone, theme_title, description, nearest_metro, nearest_railway, latitude, longitude, google_maps_url, image_url, crowd_status, vip_pass_available, opening_hours, traffic_notes)
+VALUES 
+(
+    'a0000000-0000-0000-0000-000000000001',
+    'Bagbazar Sarbojanin Durgotsav',
+    'বাগবাজার সার্বজনীন দুর্গোৎসব',
+    'North Kolkata',
+    'Traditional Sabeki Ekchala Protima & Century Heritage',
+    'One of the oldest public Durga Pujas in Kolkata, entering its 106th year. Famous for pristine white sholar saaj idol and river immersion procession.',
+    'Shyambazar (Blue Line) - Gate 1',
+    'Bagbazar Ghat / Kolkata Station',
+    22.6025,
+    88.3672,
+    'https://maps.google.com/?q=22.6025,88.3672',
+    'https://images.unsplash.com/photo-1602498456745-e9503b30470b?auto=format&fit=crop&w=1000&q=80',
+    'heavy',
+    true,
+    'Open 24 Hours',
+    'Girad Avenue restricted after 4 PM. Pedestrian walk from Shyambazar.'
+),
+(
+    'a0000000-0000-0000-0000-000000000002',
+    'Chetla Agrani Club',
+    'চেতলা অগ্রণী ক্লাব',
+    'South Kolkata',
+    'Chander Haat - Earthen Heritage & Clay Symphony',
+    'Renowned for artistic conceptual installations made with sustainable terracotta, jute, and hand-painted scrolls.',
+    'Kalighat (Blue Line) - Gate 4',
+    'Majerhat Railway Station',
+    22.5204,
+    88.3411,
+    'https://maps.google.com/?q=22.5204,88.3411',
+    'https://images.unsplash.com/photo-1570784332176-fdd73da66f03?auto=format&fit=crop&w=1000&q=80',
+    'moderate',
+    true,
+    'Open 24 Hours',
+    'Chetla Central Road one-way. Park at Kalighat Park.'
+),
+(
+    'a0000000-0000-0000-0000-000000000003',
+    'Sreebhumi Sporting Club',
+    'শ্রীভূমি স্পোর্টিং ক্লাব',
+    'North Kolkata',
+    'Vatican City & Grand Palace of Golden Lights',
+    'Famous for staggering architectural replicas adorned with pure gold & diamond ornaments on Ma Durga with Chandannagar lighting.',
+    'Ultadanga / Salt Lake Stadium Metro',
+    'Bidhannagar Road Station',
+    22.5956,
+    88.4024,
+    'https://maps.google.com/?q=22.5956,88.4024',
+    'https://images.unsplash.com/photo-1567653418876-5bb0e566e1c2?auto=format&fit=crop&w=1000&q=80',
+    'heavy',
+    true,
+    'Open 24 Hours',
+    'VIP Road service lane barricaded. Footbridge active.'
+),
+(
+    'a0000000-0000-0000-0000-000000000004',
+    'Suruchi Sangha (New Alipore)',
+    'সুরুচি সংঘ',
+    'South Kolkata',
+    'Amader Matri Shakti - Indigenous Folk Art of India',
+    'Celebrates indigenous Indian states folk arts with soul-stirring original theme songs.',
+    'Rabindra Sarobar (Blue Line)',
+    'New Alipore Railway Station',
+    22.5085,
+    88.3347,
+    'https://maps.google.com/?q=22.5085,88.3347',
+    'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80',
+    'moderate',
+    true,
+    'Open 24 Hours',
+    'Smooth flow near Block M. Auto-rickshaws from Tollygunge Phari.'
+),
+(
+    'a0000000-0000-0000-0000-000000000005',
+    'Ballavpur Sarbojanin Durgotsav (Serampore)',
+    'বল্লভপুর সার্বজনীন দুর্গোৎসব (শ্রীরামপুর)',
+    'Hooghly-Serampore Line',
+    'Danish Heritage & Traditional Sholar Saaj',
+    'Serampore landmark celebration highlighting historic Danish colonial riverfront heritage.',
+    'Dakshineswar Metro -> Train to Serampore',
+    'Serampore Railway Station (5 min walk)',
+    22.7512,
+    88.3441,
+    'https://maps.google.com/?q=22.7512,88.3441',
+    'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80',
+    'moderate',
+    true,
+    'Open 24 Hours',
+    'GT Road Serampore pedestrian corridors active.'
+),
+(
+    'a0000000-0000-0000-0000-000000000006',
+    'Rishra Nabagram Sarbojanin',
+    'রিষড়া নবগ্রাম সার্বজনীন',
+    'Hooghly-Serampore Line',
+    'Gramin Shanti & Traditional Terracotta Tapestry',
+    'Famous across Hooghly for tranquil conceptual terracotta and dokra art installations.',
+    'Dakshineswar Metro (via Bally)',
+    'Rishra Railway Station (7 min walk)',
+    22.7115,
+    88.3512,
+    'https://maps.google.com/?q=22.7115,88.3512',
+    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80',
+    'low',
+    false,
+    'Open 24 Hours',
+    'Nabagram main road open for two-wheelers.'
+),
+(
+    'a0000000-0000-0000-0000-000000000007',
+    'Konnagar Baromandir Ghat Sarbojanin',
+    'কোন্নগর বারোমন্দির সার্বজনীন',
+    'Hooghly-Serampore Line',
+    'Sacred 12 Shiva Temples & Holy Ganges Reverence',
+    'Located beside the historic Baromandir Ghat along the river Hooghly.',
+    'Dakshineswar Metro (Blue Line)',
+    'Konnagar Railway Station (6 min walk)',
+    22.6990,
+    88.3550,
+    'https://maps.google.com/?q=22.6990,88.3550',
+    'https://images.unsplash.com/photo-1570784332176-fdd73da66f03?auto=format&fit=crop&w=1000&q=80',
+    'moderate',
+    true,
+    'Open 24 Hours',
+    'Ghat promenade open for walking.'
+),
+(
+    'a0000000-0000-0000-0000-000000000008',
+    'Hind Motor Debaipukur Sarbojanin',
+    'হিন্দ মোটর দেবাইপুকুর সার্বজনীন',
+    'Hooghly-Serampore Line',
+    'Industrial Heritage & Eco-Friendly Jute Craft',
+    'Homage to Ambassador township heritage with eco-friendly jute and handloom art.',
+    'Dakshineswar Metro (via Bally)',
+    'Hind Motor Railway Station (5 min walk)',
+    22.6840,
+    88.3505,
+    'https://maps.google.com/?q=22.6840,88.3505',
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1000&q=80',
+    'low',
+    false,
+    'Open 24 Hours',
+    'Station road clear for pedestrians.'
+),
+(
+    'a0000000-0000-0000-0000-000000000009',
+    'Uttarpara Shakher Bazar Sarbojanin',
+    'উত্তরপাড়া শাঁখের বাজার সার্বজনীন',
+    'Hooghly-Serampore Line',
+    'Conch Shell Symphony & Ancient Library Lore',
+    'Located near the historic Joykrishna Public Library.',
+    'Dakshineswar Metro (10 min across bridge)',
+    'Uttarpara Railway Station (4 min walk)',
+    22.6685,
+    88.3490,
+    'https://maps.google.com/?q=22.6685,88.3490',
+    'https://images.unsplash.com/photo-1602498456745-e9503b30470b?auto=format&fit=crop&w=1000&q=80',
+    'moderate',
+    true,
+    'Open 24 Hours',
+    'Direct connection to Bally & Dakshineswar.'
+),
+(
+    'a0000000-0000-0000-0000-000000000010',
+    'Chandannagar Strand Sarbojanin',
+    'চন্দননগর স্ট্র্যান্ড সার্বজনীন',
+    'Hooghly-Serampore Line',
+    'French Colonial Splendor & World-Famous Light Craft',
+    'Located along the historic French Strand promenade by the river Hooghly.',
+    'Dakshineswar Metro -> Train to Chandannagar',
+    'Chandannagar Railway Station (8 min by Toto)',
+    22.8671,
+    88.3674,
+    'https://maps.google.com/?q=22.8671,88.3674',
+    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80',
+    'heavy',
+    true,
+    'Open 24 Hours',
+    'The Strand is strictly pedestrian. Illuminated river walk.'
+),
+(
+    'a0000000-0000-0000-0000-000000000011',
+    'Kalyani ITI More (Luminous Palace)',
+    'কল্যাণী আইটিআই মোড় দুর্গোৎসব',
+    'Kalyani & Districts',
+    'Grand Hungarian Parliament & St. Peters Mirage',
+    '120-foot tall architectural wonder with thousands of synchronized dynamic LED lights.',
+    'Ranaghat / Kalyani Local Link',
+    'Kalyani Railway Station (Main Line)',
+    22.9752,
+    88.4344,
+    'https://maps.google.com/?q=22.9752,88.4344',
+    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80',
+    'heavy',
+    true,
+    'Open 24 Hours',
+    'Expressway special bus services active 24/7.'
+)
+ON CONFLICT (id) DO NOTHING;
+
