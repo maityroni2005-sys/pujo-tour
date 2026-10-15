@@ -1,0 +1,35 @@
+name: Supabase Database Keep-Alive Automation
+
+on:
+  schedule:
+    # Runs every 5 days at 00:00 UTC (well within Supabase's 7-day inactivity pause threshold)
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub Actions tab
+
+jobs:
+  keep-alive:
+    name: Ping Supabase REST Endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase PostgreSQL REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "⚠️ SUPABASE_URL or SUPABASE_ANON_KEY secret is not set in Repository Secrets."
+            echo "Configure them in GitHub -> Settings -> Secrets and variables -> Actions to keep your database active."
+            exit 0
+          fi
+
+          echo "Pinging Supabase REST endpoint to keep free PostgreSQL database active forever..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${SUPABASE_URL}/rest/v1/pandals?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "Response HTTP Status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "✅ Supabase database successfully pinged! Free PostgreSQL database will remain active."
+          else
+            echo "⚠️ Ping returned status $STATUS (database may be warming up or credentials need check)."
+          fi
