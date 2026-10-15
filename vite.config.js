@@ -9,7 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pandal-icon.svg'],
+      includeAssets: ['favicon.svg', 'pandal-icon.svg', 'icons.svg'],
       manifest: {
         name: 'UtsavHopper: Smart Puja Parikrama & Trip Planner',
         short_name: 'UtsavHopper',
@@ -20,14 +20,9 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: '/pandal-icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/pandal-icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: '/pandal-icon.svg',
+            sizes: '192x192 512x512',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]
