@@ -47,8 +47,16 @@ export default function App() {
   }, [isDarkMode]);
 
   // Smooth map camera fly trigger
-  const handleSearchSubmit = (query) => {
+  const handleSearchSubmit = (query, geocodedCoords = null) => {
     setSearchQuery(query);
+    if (geocodedCoords && geocodedCoords.lat && geocodedCoords.lng) {
+      setFlyToTarget({
+        lat: geocodedCoords.lat,
+        lng: geocodedCoords.lng,
+        zoom: geocodedCoords.zoom || 14,
+        timestamp: Date.now(),
+      });
+    }
     setFlyTrigger((prev) => prev + 1);
   };
 

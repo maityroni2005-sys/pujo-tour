@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
-import { X, Star, Camera, CheckCircle2, Flame, Sparkles } from 'lucide-react';
+import { 
+  X, 
+  Star, 
+  Camera, 
+  CheckCircle2, 
+  Flame, 
+  Sparkles, 
+  Clock, 
+  MapPin, 
+  Train, 
+  Bus, 
+  ExternalLink 
+} from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
+import { FALLBACK_PANDAL_IMAGE } from '../data/initialPandals';
 import confetti from 'canvas-confetti';
 
 export const CheckInModal = ({ pandal, onClose }) => {
@@ -15,8 +28,13 @@ export const CheckInModal = ({ pandal, onClose }) => {
   const [comment, setComment] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imgSrc, setImgSrc] = useState(pandal?.image_url || FALLBACK_PANDAL_IMAGE);
 
   if (!pandal) return null;
+
+  const viewPlaceMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    pandal.name + ' ' + (pandal.bengali_name || '') + ' ' + (pandal.zone || '')
+  )}`;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -48,28 +66,82 @@ export const CheckInModal = ({ pandal, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-stone-900 border border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/85 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-lg bg-[#0D121F] border border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden p-6 max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-stone-800 text-stone-400 hover:text-white"
+          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-slate-900/90 text-slate-400 hover:text-white border border-slate-700 cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Modal Header */}
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-            Check-in & Pandal Review
-          </span>
+        {/* High-Resolution Photo with Fallback */}
+        <div className="relative h-44 -mx-6 -mt-6 mb-4 overflow-hidden bg-slate-950">
+          <img
+            src={imgSrc}
+            alt={pandal.name}
+            onError={() => {
+              if (imgSrc !== FALLBACK_PANDAL_IMAGE) {
+                setImgSrc(FALLBACK_PANDAL_IMAGE);
+              }
+            }}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0D121F] via-[#0D121F]/30 to-transparent" />
+          
+          <div className="absolute top-3 left-3 flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-950/90 text-amber-300 text-xs font-black border border-amber-500/30">
+              📍 {pandal.zone}
+            </span>
+          </div>
+
+          {pandal.opening_hours && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/90 text-slate-200 text-xs font-bold border border-slate-700">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>{pandal.opening_hours}</span>
+            </div>
+          )}
         </div>
-        <h3 className="text-xl font-black text-stone-100 mb-1">
-          {pandal.name}
-        </h3>
-        <p className="text-xs text-amber-400 font-bengali mb-4">
-          {pandal.bengali_name} • {pandal.zone}
-        </p>
+
+        {/* Modal Header & Theme Info */}
+        <div className="mb-3">
+          <h3 className="text-xl font-black text-white mb-0.5">
+            {pandal.name}
+          </h3>
+          {pandal.bengali_name && (
+            <p className="text-xs text-amber-400 font-bengali font-bold mb-2">
+              {pandal.bengali_name}
+            </p>
+          )}
+
+          <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1 mb-2">
+            <div className="text-slate-300">
+              <strong className="text-rose-400">Theme:</strong> <em>"{pandal.theme_title}"</em>
+            </div>
+            {pandal.nearest_railway && (
+              <div className="text-slate-300 flex items-center gap-1.5">
+                <span className="text-sky-400">🚆 Rail:</span> {pandal.nearest_railway}
+              </div>
+            )}
+            {pandal.nearest_bus && (
+              <div className="text-slate-300 flex items-center gap-1.5">
+                <span className="text-amber-400">🚌 Bus:</span> {pandal.nearest_bus}
+              </div>
+            )}
+          </div>
+
+          {/* Direct Google Maps View Place Button */}
+          <a
+            href={viewPlaceMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/30 text-amber-400 hover:text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 no-underline transition-colors mb-3"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>View Place & Photos on Google Maps</span>
+          </a>
+        </div>
 
         {/* Review Form */}
         <form onSubmit={handleSubmit} className="space-y-5">

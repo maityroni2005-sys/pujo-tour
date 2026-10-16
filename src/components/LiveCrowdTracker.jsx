@@ -1,24 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Flame, 
-  Users, 
   Clock, 
   MapPin, 
   Navigation, 
   AlertCircle, 
-  CheckCircle2, 
   Train, 
   Plus, 
-  ShieldCheck,
-  Search,
-  Filter
+  Search 
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
-import { useAuth } from '../context/AuthContext';
 
 export const LiveCrowdTracker = ({ onNavigateToRoute }) => {
   const { pandals, addToItinerary } = useAppData();
-  const { isAdmin } = useAuth();
   const [selectedCrowd, setSelectedCrowd] = useState('All');
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedZone, setSelectedZone] = useState('All');
@@ -47,7 +41,14 @@ export const LiveCrowdTracker = ({ onNavigateToRoute }) => {
     });
   }, [pandals, selectedCrowd, selectedZone, searchFilter]);
 
-  const zones = ['All', 'North Kolkata', 'South Kolkata', 'Salt Lake & Newtown', 'Hooghly-Serampore Line', 'Kalyani & Districts'];
+  const zones = useMemo(() => {
+    const set = new Set();
+    pandals.forEach((p) => {
+      if (p.zone) set.add(p.zone);
+    });
+    return ['All', ...Array.from(set).sort()];
+  }, [pandals]);
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -186,7 +187,6 @@ export const LiveCrowdTracker = ({ onNavigateToRoute }) => {
         {filteredPandals.map((pandal) => {
           const isLow = pandal.crowd_status === 'low';
           const isMod = pandal.crowd_status === 'moderate';
-          const isHeavy = pandal.crowd_status === 'heavy';
 
           const badgeBg = isLow 
             ? 'bg-emerald-500 text-white' 

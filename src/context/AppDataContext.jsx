@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialPandals } from '../data/initialPandals';
 import { initialCuratedTours } from '../data/initialCuratedTours';
 import { supabase, isSupabaseConfigured, getCachedOrFetch } from '../lib/supabaseClient';
-import { getTodayIST, getISTTimestamp } from '../lib/dateHelpers';
+import { getTodayIST } from '../lib/dateHelpers';
 import confetti from 'canvas-confetti';
 
 const AppDataContext = createContext();
@@ -99,18 +99,91 @@ export const AppDataProvider = ({ children }) => {
     };
   }, []);
 
-  // 2. Pandals state
+  // 2. Pandals state with automatic merge for new seed pandals
   const [pandals, setPandals] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.PANDALS);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const parsedIds = new Set(parsed.map((p) => p.id));
+          const merged = [...parsed];
+          let added = false;
+          for (const seed of initialPandals) {
+            if (!parsedIds.has(seed.id)) {
+              merged.push(seed);
+              added = true;
+            }
+          }
+          return added ? merged : parsed;
+        }
       } catch {
         return initialPandals;
       }
     }
     return initialPandals;
   });
+
+  // 2b. Live User GPS Location & Geocoded Searched Target State
+  const [userLocation, setUserLocation] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [searchedLocation, setSearchedLocation] = useState(null);
+
+  /**
+   * High-accuracy GPS location locator using navigator.geolocation
+   */
+  const locateUser = () => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined' || !navigator.geolocation) {
+        const err = 'Geolocation is not supported by your current browser.';
+        setLocationError(err);
+        resolve({ success: false, error: err });
+        return;
+      }
+
+      setIsLocating(true);
+      setLocationError(null);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: Date.now(),
+          };
+          setUserLocation(coords);
+          setIsLocating(false);
+          resolve({ success: true, coords });
+        },
+        (error) => {
+          setIsLocating(false);
+          let message = 'Unable to detect your live location.';
+          if (error.code === error.PERMISSION_DENIED) {
+            message = 'GPS permission denied. Please allow location access in your browser.';
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            message = 'GPS signal unavailable. Please ensure location services are enabled.';
+          } else if (error.code === error.TIMEOUT) {
+            message = 'GPS detection timed out. Please try again.';
+          }
+          setLocationError(message);
+          resolve({ success: false, error: message });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 15000,
+        }
+      );
+    });
+  };
+
+  const clearUserLocation = () => {
+    setUserLocation(null);
+    setLocationError(null);
+  };
+
 
   // Sync pandals to localStorage
   useEffect(() => {
@@ -183,7 +256,15 @@ export const AppDataProvider = ({ children }) => {
         initialPandals
       );
       if (data && data.length > 0) {
-        setPandals(data);
+        // Smart merge: ensure all newly seeded pandals (Contai, Uttar 24 Pgs, etc.) remain intact
+        const dataIds = new Set(data.map((p) => p.id));
+        const merged = [...data];
+        for (const seed of initialPandals) {
+          if (!dataIds.has(seed.id)) {
+            merged.push(seed);
+          }
+        }
+        setPandals(merged);
       }
     };
     loadPandalsWithCache();
@@ -487,6 +568,14 @@ export const AppDataProvider = ({ children }) => {
         itinerary,
         curatedTours,
         reviews,
+        // Geolocation & Distance Helpers
+        userLocation,
+        isLocating,
+        locationError,
+        locateUser,
+        clearUserLocation,
+        searchedLocation,
+        setSearchedLocation,
         // Pandal operations
         addPandal,
         updatePandal,
